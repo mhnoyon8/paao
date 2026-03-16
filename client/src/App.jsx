@@ -3,6 +3,7 @@ import OfficeCanvas from './components/OfficeCanvas';
 import AgentDetails from './components/AgentDetails';
 import WorkflowArrows from './components/WorkflowArrows';
 import ChatPanel from './components/ChatPanel';
+import WorkflowDetailsModal from './components/WorkflowDetailsModal';
 import useSocket from './hooks/useSocket';
 
 const API = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE || 'http://localhost:8080';
@@ -11,6 +12,8 @@ export default function App() {
   const [agents, setAgents] = useState([]);
   const [workflow, setWorkflow] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [workflowDetails, setWorkflowDetails] = useState(null);
+  const [workflowModalOpen, setWorkflowModalOpen] = useState(false);
 
   const loadAgents = async () => {
     const res = await fetch(`${API}/api/agents`);
@@ -28,6 +31,10 @@ export default function App() {
       setSelected((s) => (s?.id === payload.id ? payload : s));
     }
     if (type === 'workflow:snapshot') setWorkflow(payload);
+    if (type === 'workflow:details') {
+      setWorkflowDetails(payload);
+      setWorkflowModalOpen(true);
+    }
   }, []);
 
   const socket = useSocket(onEvent);
@@ -37,8 +44,8 @@ export default function App() {
   };
 
   const onWorkflowClick = (item) => {
-    if (item.type === 'edge') {
-      alert(`Workflow: ${item.from} → ${item.to}`);
+    if (item.type === 'edge' && socket) {
+      socket.emit('workflow:details:request', { edgeId: item.edgeId, from: item.from, to: item.to });
     }
   };
 
@@ -55,6 +62,11 @@ export default function App() {
       </div>
 
       <ChatPanel socket={socket} />
+      <WorkflowDetailsModal
+        open={workflowModalOpen}
+        details={workflowDetails}
+        onClose={() => setWorkflowModalOpen(false)}
+      />
     </main>
   );
 }

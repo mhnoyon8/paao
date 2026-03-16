@@ -25,7 +25,7 @@ export default function WorkflowArrows({ agents = [], workflow = [], onEdgeClick
               {next && (
                 <button
                   className="text-cyan-300 text-lg animate-pulse"
-                  onClick={() => onEdgeClick?.({ type: 'edge', from: node.id, to: next.id, label: edge.label })}
+                  onClick={() => onEdgeClick?.({ type: 'edge', from: node.id, to: next.id, label: edge.label, edgeId: `${node.id}->${next.id}` })}
                   title={`${node.name} → ${next.name}`}
                 >
                   ⟶

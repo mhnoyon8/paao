@@ -12,6 +12,7 @@ export default function useSocket(onEvent) {
     s.on('agent:update', (payload) => onEvent?.('agent:update', payload));
     s.on('agents:snapshot', (payload) => onEvent?.('agents:snapshot', payload));
     s.on('workflow:snapshot', (payload) => onEvent?.('workflow:snapshot', payload));
+    s.on('workflow:details', (payload) => onEvent?.('workflow:details', payload));
 
     return () => s.disconnect();
   }, [onEvent]);

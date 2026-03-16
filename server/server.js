@@ -4,6 +4,7 @@ import cors from 'cors';
 import http from 'node:http';
 import { Server } from 'socket.io';
 import agentsRouter from './routes/agents.js';
+import logsRouter from './routes/logs.js';
 import db from './services/db.js';
 import { initSockets } from './sockets/index.js';
 
@@ -15,6 +16,7 @@ app.use(cors({ origin: process.env.CLIENT_ORIGIN || '*' }));
 app.use(express.json());
 app.use((req, _res, next) => { req.io = io; next(); });
 app.use('/api', agentsRouter);
+app.use('/api', logsRouter);
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
