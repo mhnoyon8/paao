@@ -91,6 +91,8 @@ export default function App() {
         open={workflowModalOpen}
         details={workflowDetails}
         onClose={() => setWorkflowModalOpen(false)}
+        apiBase={API}
+        socket={socket}
       />
       <Toast toasts={toasts} onClose={removeToast} />
     </main>

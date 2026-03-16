@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import db from '../services/db.js';
 import { normalizeAgent } from '../models/Agent.js';
+import { insertWorkflowHistory, getWorkflowHistoryByEdge } from '../models/WorkflowHistory.js';
 
 const chatStore = {
   aether: [
@@ -49,14 +50,31 @@ export function initSockets(io) {
 
     socket.on('workflow:details:request', ({ edgeId, from, to }) => {
       const edge = workflowEdges.find((e) => `${e.from}->${e.to}` === edgeId) || { from, to, label: 'handoff' };
-      socket.emit('workflow:details', {
+      const payload = {
+        edgeId: edgeId || `${edge.from}->${edge.to}`,
         from: edge.from,
         to: edge.to,
         task: `${edge.label} task transfer`,
         dataSizeKb: Math.floor(Math.random() * 120) + 10,
         timestamp: new Date().toISOString(),
         status: 'delivered',
+      };
+
+      const id = insertWorkflowHistory({
+        edgeId: payload.edgeId,
+        fromAgent: payload.from,
+        toAgent: payload.to,
+        taskDescription: payload.task,
+        dataSize: payload.dataSizeKb,
+        timestamp: payload.timestamp,
+        status: payload.status,
       });
+
+      const item = { id, edgeId: payload.edgeId, fromAgent: payload.from, toAgent: payload.to, taskDescription: payload.task, dataSize: payload.dataSizeKb, timestamp: payload.timestamp, status: payload.status };
+      io.emit('workflow:new', item);
+
+      const history = getWorkflowHistoryByEdge(payload.edgeId);
+      socket.emit('workflow:details', { ...payload, history });
     });
 
     socket.on('chat:typing', ({ panel, typing }) => {

@@ -5,8 +5,10 @@ import http from 'node:http';
 import { Server } from 'socket.io';
 import agentsRouter from './routes/agents.js';
 import logsRouter from './routes/logs.js';
+import workflowRouter from './routes/workflow.js';
 import db from './services/db.js';
 import { initSockets } from './sockets/index.js';
+import { initWorkflowHistoryTable } from './models/WorkflowHistory.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -17,6 +19,7 @@ app.use(express.json());
 app.use((req, _res, next) => { req.io = io; next(); });
 app.use('/api', agentsRouter);
 app.use('/api', logsRouter);
+app.use('/api', workflowRouter);
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
@@ -37,6 +40,7 @@ function seedIfEmpty() {
 }
 
 seedIfEmpty();
+initWorkflowHistoryTable();
 initSockets(io);
 
 const PORT = Number(process.env.PORT || 8080);
