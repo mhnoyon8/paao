@@ -8,7 +8,7 @@ import logsRouter from './routes/logs.js';
 import workflowRouter from './routes/workflow.js';
 import db from './services/db.js';
 import { initSockets } from './sockets/index.js';
-import { initWorkflowHistoryTable } from './models/WorkflowHistory.js';
+import { cleanupWorkflowHistory, initWorkflowHistoryTable } from './models/WorkflowHistory.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -44,6 +44,14 @@ initWorkflowHistoryTable();
 initSockets(io);
 
 const PORT = Number(process.env.PORT || 8080);
+const retentionDays = Number(process.env.WORKFLOW_RETENTION_DAYS || 30);
+const cleanupEveryMs = Number(process.env.WORKFLOW_CLEANUP_INTERVAL_MS || 3600000);
+
+setInterval(() => {
+  const deleted = cleanupWorkflowHistory(retentionDays);
+  if (deleted > 0) console.log(`[workflow-cleanup] deleted=${deleted} retentionDays=${retentionDays}`);
+}, cleanupEveryMs);
+
 server.listen(PORT, () => {
   console.log(`PAAO server running on :${PORT}`);
 });

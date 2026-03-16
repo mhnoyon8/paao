@@ -5,6 +5,7 @@ import WorkflowArrows from './components/WorkflowArrows';
 import ChatPanel from './components/ChatPanel';
 import WorkflowDetailsModal from './components/WorkflowDetailsModal';
 import Toast from './components/Toast';
+import WorkflowAnalytics from './components/WorkflowAnalytics';
 import useSocket from './hooks/useSocket';
 import useToast from './hooks/useToast';
 
@@ -87,6 +88,7 @@ export default function App() {
       </div>
 
       <ChatPanel socket={socket} />
+      <WorkflowAnalytics apiBase={API} onToast={pushToast} />
       <WorkflowDetailsModal
         open={workflowModalOpen}
         details={workflowDetails}
