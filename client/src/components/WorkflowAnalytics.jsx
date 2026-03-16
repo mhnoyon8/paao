@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+
+const WorkflowBarChart = lazy(() => import('./WorkflowBarChart'));
 
 function toDateInput(d) {
   return d.toISOString().slice(0, 10);
@@ -86,17 +87,16 @@ export default function WorkflowAnalytics({ apiBase, onToast }) {
             </div>
           </div>
 
-          <div className="mt-3 h-48 rounded bg-slate-800 p-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={(data.byEdge || []).map((x) => ({ edge: x.edgeId, transfers: x.transfers }))}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="edge" tick={{ fill: '#cbd5e1', fontSize: 11 }} />
-                <YAxis tick={{ fill: '#cbd5e1', fontSize: 11 }} />
-                <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #334155', color: '#e2e8f0' }} />
-                <Bar dataKey="transfers" fill="#22d3ee" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <Suspense fallback={
+            <div className="mt-3 h-48 rounded bg-slate-800 p-2 flex items-center justify-center">
+              <div className="flex items-center gap-2 text-slate-300 text-sm">
+                <span className="inline-block h-4 w-4 rounded-full border-2 border-slate-500 border-t-cyan-400 animate-spin" />
+                Loading chart...
+              </div>
+            </div>
+          }>
+            <WorkflowBarChart data={data.byEdge || []} />
+          </Suspense>
 
           <div className="mt-3 max-h-40 overflow-auto border border-slate-700 rounded">
             <table className="w-full text-xs">
