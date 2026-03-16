@@ -6,6 +6,7 @@ import {
   getWorkflowHistoryByEdge,
   getWorkflowHistoryRecent,
 } from '../models/WorkflowHistory.js';
+import { getCleanupStatus, recordCleanupRun } from '../services/cleanupStatus.js';
 
 const router = Router();
 
@@ -25,7 +26,10 @@ router.get('/workflow/analytics', (req, res) => {
 });
 
 router.get('/workflow/export.csv', (req, res) => {
-  const csv = exportWorkflowCsv(Number(req.query.limit || 1000));
+  const limit = Number(req.query.limit || 1000);
+  const from = req.query.from ? String(req.query.from) : null;
+  const to = req.query.to ? String(req.query.to) : null;
+  const csv = exportWorkflowCsv(limit, from, to);
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="workflow-history.csv"');
   res.send(csv);
@@ -34,7 +38,12 @@ router.get('/workflow/export.csv', (req, res) => {
 router.post('/workflow/cleanup', (req, res) => {
   const retentionDays = Number(req.body?.retentionDays || 30);
   const deleted = cleanupWorkflowHistory(retentionDays);
-  res.json({ ok: true, retentionDays, deleted });
+  recordCleanupRun(deleted);
+  res.json({ ok: true, retentionDays, deleted, status: getCleanupStatus() });
+});
+
+router.get('/workflow/cleanup/status', (_req, res) => {
+  res.json(getCleanupStatus());
 });
 
 export default router;

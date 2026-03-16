@@ -78,13 +78,25 @@ export function cleanupWorkflowHistory(retentionDays = 30) {
   return info.changes || 0;
 }
 
-export function exportWorkflowCsv(limit = 1000) {
-  const rows = db.prepare(`
-    SELECT id, edgeId, fromAgent, toAgent, taskDescription, dataSize, timestamp, status
-    FROM workflow_history
-    ORDER BY timestamp DESC
-    LIMIT ?
-  `).all(Number(limit));
+export function exportWorkflowCsv(limit = 1000, from = null, to = null) {
+  let rows;
+  if (from || to) {
+    rows = db.prepare(`
+      SELECT id, edgeId, fromAgent, toAgent, taskDescription, dataSize, timestamp, status
+      FROM workflow_history
+      WHERE (? IS NULL OR timestamp >= ?)
+        AND (? IS NULL OR timestamp <= ?)
+      ORDER BY timestamp DESC
+      LIMIT ?
+    `).all(from, from, to, to, Number(limit));
+  } else {
+    rows = db.prepare(`
+      SELECT id, edgeId, fromAgent, toAgent, taskDescription, dataSize, timestamp, status
+      FROM workflow_history
+      ORDER BY timestamp DESC
+      LIMIT ?
+    `).all(Number(limit));
+  }
 
   const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const head = ['id','edgeId','fromAgent','toAgent','taskDescription','dataSize','timestamp','status'];

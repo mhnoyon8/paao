@@ -9,6 +9,7 @@ import workflowRouter from './routes/workflow.js';
 import db from './services/db.js';
 import { initSockets } from './sockets/index.js';
 import { cleanupWorkflowHistory, initWorkflowHistoryTable } from './models/WorkflowHistory.js';
+import { recordCleanupRun } from './services/cleanupStatus.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -49,6 +50,7 @@ const cleanupEveryMs = Number(process.env.WORKFLOW_CLEANUP_INTERVAL_MS || 360000
 
 setInterval(() => {
   const deleted = cleanupWorkflowHistory(retentionDays);
+  recordCleanupRun(deleted);
   if (deleted > 0) console.log(`[workflow-cleanup] deleted=${deleted} retentionDays=${retentionDays}`);
 }, cleanupEveryMs);
 
