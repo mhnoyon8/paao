@@ -1,18 +1,20 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 
 export default function useSocket(onEvent) {
-  const socketRef = useRef(null);
+  const [socket, setSocket] = useState(null);
 
   useEffect(() => {
     const base = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE || 'http://localhost:8080';
-    socketRef.current = io(base, { transports: ['websocket'] });
+    const s = io(base, { transports: ['websocket'] });
+    setSocket(s);
 
-    socketRef.current.on('agent:update', (payload) => onEvent?.('agent:update', payload));
-    socketRef.current.on('agents:snapshot', (payload) => onEvent?.('agents:snapshot', payload));
+    s.on('agent:update', (payload) => onEvent?.('agent:update', payload));
+    s.on('agents:snapshot', (payload) => onEvent?.('agents:snapshot', payload));
+    s.on('workflow:snapshot', (payload) => onEvent?.('workflow:snapshot', payload));
 
-    return () => socketRef.current?.disconnect();
+    return () => s.disconnect();
   }, [onEvent]);
 
-  return socketRef.current;
+  return socket;
 }

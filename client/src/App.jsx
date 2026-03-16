@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import OfficeCanvas from './components/OfficeCanvas';
 import AgentDetails from './components/AgentDetails';
+import WorkflowArrows from './components/WorkflowArrows';
+import ChatPanel from './components/ChatPanel';
 import useSocket from './hooks/useSocket';
 
 const API = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
 export default function App() {
   const [agents, setAgents] = useState([]);
+  const [workflow, setWorkflow] = useState([]);
   const [selected, setSelected] = useState(null);
 
   const loadAgents = async () => {
@@ -24,12 +27,19 @@ export default function App() {
       setAgents((prev) => prev.map((x) => x.id === payload.id ? payload : x));
       setSelected((s) => (s?.id === payload.id ? payload : s));
     }
+    if (type === 'workflow:snapshot') setWorkflow(payload);
   }, []);
 
-  useSocket(onEvent);
+  const socket = useSocket(onEvent);
 
   const onAction = async (id, action) => {
     await fetch(`${API}/api/agent/${id}/${action}`, { method: 'POST' });
+  };
+
+  const onWorkflowClick = (item) => {
+    if (item.type === 'edge') {
+      alert(`Workflow: ${item.from} → ${item.to}`);
+    }
   };
 
   return (
@@ -37,10 +47,14 @@ export default function App() {
       <h1 className="text-2xl md:text-3xl font-bold">Pixel Art Agent Office (PAAO)</h1>
       <p className="text-slate-400 mt-1">Real-time OpenClaw agent dashboard</p>
 
-      <div className="mt-6 grid lg:grid-cols-3 gap-4">
+      <WorkflowArrows agents={agents} workflow={workflow} onEdgeClick={onWorkflowClick} />
+
+      <div className="mt-2 grid lg:grid-cols-3 gap-4">
         <section className="lg:col-span-2"><OfficeCanvas agents={agents} onSelect={setSelected} /></section>
         <section><AgentDetails agent={selected} onAction={onAction} /></section>
       </div>
+
+      <ChatPanel socket={socket} />
     </main>
   );
 }
