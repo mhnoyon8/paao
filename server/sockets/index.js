@@ -41,6 +41,7 @@ function classifyLog(line) {
 
 export function initSockets(io) {
   io.on('connection', (socket) => {
+    let logsPaused = false;
     const rows = db.prepare('SELECT * FROM agents ORDER BY name').all().map(normalizeAgent);
     socket.emit('agents:snapshot', rows);
     socket.emit('workflow:snapshot', workflowEdges);
@@ -62,6 +63,9 @@ export function initSockets(io) {
       socket.broadcast.emit('chat:typing', { panel, typing: !!typing });
     });
 
+    socket.on('logs:pause', () => { logsPaused = true; });
+    socket.on('logs:resume', () => { logsPaused = false; });
+
     socket.on('chat:send', ({ panel, message }) => {
       if (!chatStore[panel]) return;
       const msg = { ...message, sender: message.sender || 'user', at: message.at || new Date().toISOString() };
@@ -78,6 +82,7 @@ export function initSockets(io) {
     });
 
     const timer = setInterval(() => {
+      if (logsPaused) return;
       const p = latestOpenClawLogPath();
       const lines = readTailLines(p, 8).map((line) => ({ line, level: classifyLog(line) }));
       socket.emit('logs:update', lines);

@@ -17,6 +17,9 @@ export default function ChatPanel({ socket }) {
   const [typing, setTyping] = useState({ aether: false, orion: false });
   const [unread, setUnread] = useState({ aether: 0, orion: 0 });
   const [logs, setLogs] = useState([]);
+  const [logsPaused, setLogsPaused] = useState(false);
+  const [logFilter, setLogFilter] = useState('');
+  const [logSearch, setLogSearch] = useState('');
 
   useEffect(() => {
     const cached = {
@@ -49,7 +52,9 @@ export default function ChatPanel({ socket }) {
       }
     };
     const onTyping = ({ panel, typing }) => setTyping((t) => ({ ...t, [panel]: typing }));
-    const onLogs = (payload) => setLogs(payload || []);
+    const onLogs = (payload) => {
+      if (!logsPaused) setLogs(payload || []);
+    };
 
     socket.on('chat:snapshot', onSnapshot);
     socket.on('chat:update', onUpdate);
@@ -62,9 +67,21 @@ export default function ChatPanel({ socket }) {
       socket.off('chat:typing', onTyping);
       socket.off('logs:update', onLogs);
     };
-  }, [socket, active]);
+  }, [socket, active, logsPaused]);
 
   const current = useMemo(() => messages[active] || [], [messages, active]);
+
+  const visibleLogs = useMemo(() => {
+    const f = logFilter.trim().toLowerCase();
+    const s = logSearch.trim().toLowerCase();
+    return logs.filter((l) => {
+      const line = (l.line || '').toLowerCase();
+      const lvl = (l.level || '').toLowerCase();
+      const passFilter = !f || line.includes(f) || lvl.includes(f);
+      const passSearch = !s || line.includes(s);
+      return passFilter && passSearch;
+    });
+  }, [logs, logFilter, logSearch]);
 
   const sendTyping = (v) => socket?.emit('chat:typing', { panel: active, typing: v });
 
@@ -74,6 +91,13 @@ export default function ChatPanel({ socket }) {
     socket?.emit('chat:send', { panel: active, message: msg });
     setInput('');
     sendTyping(false);
+  };
+
+  const toggleLogs = () => {
+    if (!socket) return;
+    const next = !logsPaused;
+    setLogsPaused(next);
+    socket.emit(next ? 'logs:pause' : 'logs:resume');
   };
 
   return (
@@ -119,12 +143,31 @@ export default function ChatPanel({ socket }) {
       </div>
 
       <div className="mt-4 rounded-lg border border-slate-700 p-3 bg-slate-950">
-        <h4 className="text-sm font-semibold text-slate-200 mb-2">Live Logs (Orion)</h4>
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+          <h4 className="text-sm font-semibold text-slate-200 mr-auto">Live Logs (Orion)</h4>
+          <button onClick={toggleLogs} className="btn">{logsPaused ? '▶ Resume' : '⏸ Pause'}</button>
+          <input
+            value={logFilter}
+            onChange={(e) => setLogFilter(e.target.value)}
+            placeholder="Filter (error/warn/info)"
+            className="rounded bg-slate-800 border border-slate-600 px-2 py-1 text-xs"
+          />
+          <input
+            value={logSearch}
+            onChange={(e) => setLogSearch(e.target.value)}
+            placeholder="Search text"
+            className="rounded bg-slate-800 border border-slate-600 px-2 py-1 text-xs"
+          />
+        </div>
+
         <div className="max-h-40 overflow-auto space-y-1 text-xs font-mono">
-          {logs.length === 0 && <p className="text-slate-500">No logs yet...</p>}
-          {logs.map((l, idx) => (
-            <p key={idx} className={logColor(l.level)}>{l.line}</p>
-          ))}
+          {visibleLogs.length === 0 && <p className="text-slate-500">No logs yet...</p>}
+          {visibleLogs.map((l, idx) => {
+            const hit = logSearch && (l.line || '').toLowerCase().includes(logSearch.toLowerCase());
+            return (
+              <p key={idx} className={`${logColor(l.level)} ${hit ? 'bg-yellow-900/30 px-1 rounded' : ''}`}>{l.line}</p>
+            );
+          })}
         </div>
       </div>
     </div>
