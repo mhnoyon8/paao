@@ -24,3 +24,8 @@
   50% { transform: translateY(-2px); }
   100% { transform: translateY(0); }
 }
+
+@keyframes toastIn {
+  from { transform: translateX(18px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}

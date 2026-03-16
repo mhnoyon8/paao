@@ -4,7 +4,9 @@ import AgentDetails from './components/AgentDetails';
 import WorkflowArrows from './components/WorkflowArrows';
 import ChatPanel from './components/ChatPanel';
 import WorkflowDetailsModal from './components/WorkflowDetailsModal';
+import Toast from './components/Toast';
 import useSocket from './hooks/useSocket';
+import useToast from './hooks/useToast';
 
 const API = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
@@ -14,12 +16,18 @@ export default function App() {
   const [selected, setSelected] = useState(null);
   const [workflowDetails, setWorkflowDetails] = useState(null);
   const [workflowModalOpen, setWorkflowModalOpen] = useState(false);
+  const { toasts, pushToast, removeToast, updateToast } = useToast();
 
   const loadAgents = async () => {
-    const res = await fetch(`${API}/api/agents`);
-    const data = await res.json();
-    setAgents(data);
-    if (!selected && data[0]) setSelected(data[0]);
+    try {
+      const res = await fetch(`${API}/api/agents`);
+      if (!res.ok) throw new Error('Failed to load agents');
+      const data = await res.json();
+      setAgents(data);
+      if (!selected && data[0]) setSelected(data[0]);
+    } catch {
+      pushToast('Failed to load agents', 'error');
+    }
   };
 
   useEffect(() => { loadAgents(); }, []);
@@ -35,12 +43,29 @@ export default function App() {
       setWorkflowDetails(payload);
       setWorkflowModalOpen(true);
     }
-  }, []);
+    if (type === 'socket:disconnect') pushToast('Connection lost. Reconnecting...', 'warning', 4000);
+    if (type === 'socket:connect') pushToast('Reconnected', 'success', 1200);
+  }, [pushToast]);
 
   const socket = useSocket(onEvent);
 
   const onAction = async (id, action) => {
-    await fetch(`${API}/api/agent/${id}/${action}`, { method: 'POST' });
+    const loadingId = pushToast('অপেক্ষা করুন...', 'loading', 0);
+    try {
+      const res = await fetch(`${API}/api/agent/${id}/${action}`, { method: 'POST' });
+      if (!res.ok) throw new Error('request failed');
+      const okMap = {
+        approve: 'Approved! ✅',
+        reject: 'Rejected ✅',
+        pause: 'Paused ✅',
+        resume: 'Resumed ✅',
+      };
+      updateToast(loadingId, { type: 'success', message: okMap[action] || 'Done ✅' });
+      setTimeout(() => removeToast(loadingId), 1200);
+    } catch {
+      updateToast(loadingId, { type: 'error', message: `Failed to ${action}` });
+      setTimeout(() => removeToast(loadingId), 2500);
+    }
   };
 
   const onWorkflowClick = (item) => {
@@ -67,6 +92,7 @@ export default function App() {
         details={workflowDetails}
         onClose={() => setWorkflowModalOpen(false)}
       />
+      <Toast toasts={toasts} onClose={removeToast} />
     </main>
   );
 }
