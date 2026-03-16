@@ -2,7 +2,7 @@ import StatusIndicator from './StatusIndicator';
 
 export default function AgentCard({ agent, onClick }) {
   return (
-    <button onClick={() => onClick(agent)} className="w-full text-left rounded-xl bg-slate-900 p-4 border border-slate-700 hover:border-slate-500 transition">
+    <button onClick={() => onClick(agent)} className="agent-card-3d w-full text-left rounded-xl bg-slate-900 p-4 border border-slate-700 hover:border-slate-500 transition">
       <div className={`pixel-agent ${agent.status}`} />
       <div className="mt-2 flex items-center justify-between gap-2">
         <p className="font-semibold text-white">{agent.name}</p>

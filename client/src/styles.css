@@ -13,16 +13,37 @@
   box-shadow: 0 0 0 2px #0f172a inset;
   position: relative;
 }
-.pixel-agent.working { animation: typing 1s infinite; }
-.pixel-agent.waiting::after { content: '?'; position: absolute; top: -10px; right: -6px; color: #facc15; font-weight: 700; }
-.pixel-agent.calling::after { content: '🎧'; position: absolute; top: -8px; right: -8px; }
-.pixel-agent.idle::after { content: 'Zzz'; position: absolute; top: -10px; right: -14px; color: #cbd5e1; font-size: 10px; }
-.pixel-agent.error::after { content: '⚠'; position: absolute; top: -10px; right: -8px; color: #ef4444; }
+.pixel-agent.working { animation: typing 0.9s ease-in-out infinite; }
+.pixel-agent.waiting::after { content: '?'; position: absolute; top: -10px; right: -6px; color: #facc15; font-weight: 700; animation: pulseQ 1.2s ease-in-out infinite; }
+.pixel-agent.calling::after { content: '🎧'; position: absolute; top: -8px; right: -8px; animation: bob 1.2s ease-in-out infinite; }
+.pixel-agent.idle::after { content: 'Zzz'; position: absolute; top: -10px; right: -14px; color: #cbd5e1; font-size: 10px; animation: fadeZ 2s ease-in-out infinite; }
+.pixel-agent.error::after { content: '⚠'; position: absolute; top: -10px; right: -8px; color: #ef4444; animation: shake 0.6s ease-in-out infinite; }
 
 @keyframes typing {
   0% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
+  50% { transform: translateY(-2px) scale(1.01); }
   100% { transform: translateY(0); }
+}
+
+@keyframes pulseQ { 0%,100%{opacity:1} 50%{opacity:.45} }
+@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)} }
+@keyframes fadeZ { 0%,100%{opacity:.4} 50%{opacity:1} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 50%{transform:translateX(1.5px)} }
+
+.office-3d { perspective: 900px; }
+.office-3d .agent-card-3d { transform-style: preserve-3d; transform: rotateX(3deg) rotateY(-3deg); transition: transform .2s ease; }
+.office-3d .agent-card-3d:hover { transform: rotateX(0deg) rotateY(0deg) translateY(-2px); }
+
+@media (max-width: 640px) {
+  .pixel-agent { width: 42px; height: 42px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pixel-agent.working,
+  .pixel-agent.waiting::after,
+  .pixel-agent.calling::after,
+  .pixel-agent.idle::after,
+  .pixel-agent.error::after { animation: none !important; }
 }
 
 @keyframes toastIn {

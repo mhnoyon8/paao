@@ -6,7 +6,7 @@ function toDateInput(d) {
   return d.toISOString().slice(0, 10);
 }
 
-export default function WorkflowAnalytics({ apiBase, onToast }) {
+export default function WorkflowAnalytics({ apiBase, onToast, token }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [cleanup, setCleanup] = useState({ lastRunAt: null, lastDeleted: 0, history: [] });
@@ -45,7 +45,10 @@ export default function WorkflowAnalytics({ apiBase, onToast }) {
     try {
       const res = await fetch(`${apiBase}/api/workflow/cleanup`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ retentionDays: 30 }),
       });
       const out = await res.json();

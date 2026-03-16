@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import db from '../services/db.js';
 import { normalizeAgent } from '../models/Agent.js';
+import { sendTelegram } from '../services/telegram.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -27,7 +29,7 @@ function actionToStatus(action) {
 }
 
 ['approve', 'reject', 'pause', 'resume'].forEach((action) => {
-  router.post(`/agent/:id/${action}`, (req, res) => {
+  router.post(`/agent/:id/${action}`, requireAuth, async (req, res) => {
     const status = actionToStatus(action);
     const row = oneStmt.get(req.params.id);
     if (!row) return res.status(404).json({ error: 'Agent not found' });
@@ -37,6 +39,10 @@ function actionToStatus(action) {
 
     const updated = normalizeAgent(oneStmt.get(req.params.id));
     req.io.emit('agent:update', updated);
+
+    sendTelegram(`🤖 ${updated.name} → ${action.toUpperCase()}\nTask: ${updated.currentTask || 'N/A'}`, { agentId: updated.id })
+      .catch(() => {});
+
     res.json({ ok: true, agent: updated });
   });
 });

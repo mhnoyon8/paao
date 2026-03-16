@@ -3,6 +3,7 @@ import path from 'node:path';
 import db from '../services/db.js';
 import { normalizeAgent } from '../models/Agent.js';
 import { insertWorkflowHistory, getWorkflowHistoryByEdge } from '../models/WorkflowHistory.js';
+import { sendTelegram } from '../services/telegram.js';
 
 const chatStore = {
   aether: [
@@ -72,6 +73,7 @@ export function initSockets(io) {
 
       const item = { id, edgeId: payload.edgeId, fromAgent: payload.from, toAgent: payload.to, taskDescription: payload.task, dataSize: payload.dataSizeKb, timestamp: payload.timestamp, status: payload.status };
       io.emit('workflow:new', item);
+      sendTelegram(`🔁 Workflow: ${item.fromAgent} → ${item.toAgent}\nTask: ${item.taskDescription}\nData: ${item.dataSize}KB`, { agentId: item.toAgent }).catch(() => {});
 
       const history = getWorkflowHistoryByEdge(payload.edgeId);
       socket.emit('workflow:details', { ...payload, history });

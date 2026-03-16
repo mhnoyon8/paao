@@ -7,6 +7,7 @@ import {
   getWorkflowHistoryRecent,
 } from '../models/WorkflowHistory.js';
 import { getCleanupStatus, recordCleanupRun } from '../services/cleanupStatus.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -35,7 +36,7 @@ router.get('/workflow/export.csv', (req, res) => {
   res.send(csv);
 });
 
-router.post('/workflow/cleanup', (req, res) => {
+router.post('/workflow/cleanup', requireAuth, (req, res) => {
   const retentionDays = Number(req.body?.retentionDays || 30);
   const deleted = cleanupWorkflowHistory(retentionDays);
   recordCleanupRun(deleted);

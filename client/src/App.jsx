@@ -6,6 +6,7 @@ import ChatPanel from './components/ChatPanel';
 import WorkflowDetailsModal from './components/WorkflowDetailsModal';
 import Toast from './components/Toast';
 import WorkflowAnalytics from './components/WorkflowAnalytics';
+import AuthPanel from './components/AuthPanel';
 import useSocket from './hooks/useSocket';
 import useToast from './hooks/useToast';
 
@@ -17,6 +18,8 @@ export default function App() {
   const [selected, setSelected] = useState(null);
   const [workflowDetails, setWorkflowDetails] = useState(null);
   const [workflowModalOpen, setWorkflowModalOpen] = useState(false);
+  const [token, setToken] = useState(localStorage.getItem('paao-token') || '');
+  const [mode3d, setMode3d] = useState(false);
   const { toasts, pushToast, removeToast, updateToast } = useToast();
 
   const loadAgents = async () => {
@@ -53,7 +56,10 @@ export default function App() {
   const onAction = async (id, action) => {
     const loadingId = pushToast('অপেক্ষা করুন...', 'loading', 0);
     try {
-      const res = await fetch(`${API}/api/agent/${id}/${action}`, { method: 'POST' });
+      const res = await fetch(`${API}/api/agent/${id}/${action}`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (!res.ok) throw new Error('request failed');
       const okMap = {
         approve: 'Approved! ✅',
@@ -77,18 +83,26 @@ export default function App() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-4 md:p-6">
-      <h1 className="text-2xl md:text-3xl font-bold">Pixel Art Agent Office (PAAO)</h1>
-      <p className="text-slate-400 mt-1">Real-time OpenClaw agent dashboard</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">Pixel Art Agent Office (PAAO)</h1>
+          <p className="text-slate-400 mt-1">Real-time OpenClaw agent dashboard</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="btn" onClick={() => setMode3d((v) => !v)}>{mode3d ? '2D Mode' : '3D Office Mode'}</button>
+          <AuthPanel apiBase={API} token={token} onToken={setToken} onToast={pushToast} />
+        </div>
+      </div>
 
       <WorkflowArrows agents={agents} workflow={workflow} onEdgeClick={onWorkflowClick} />
 
       <div className="mt-2 grid lg:grid-cols-3 gap-4">
-        <section className="lg:col-span-2"><OfficeCanvas agents={agents} onSelect={setSelected} /></section>
+        <section className="lg:col-span-2"><OfficeCanvas agents={agents} onSelect={setSelected} mode3d={mode3d} /></section>
         <section><AgentDetails agent={selected} onAction={onAction} /></section>
       </div>
 
       <ChatPanel socket={socket} />
-      <WorkflowAnalytics apiBase={API} onToast={pushToast} />
+      <WorkflowAnalytics apiBase={API} onToast={pushToast} token={token} />
       <WorkflowDetailsModal
         open={workflowModalOpen}
         details={workflowDetails}

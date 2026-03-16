@@ -6,6 +6,7 @@ import { Server } from 'socket.io';
 import agentsRouter from './routes/agents.js';
 import logsRouter from './routes/logs.js';
 import workflowRouter from './routes/workflow.js';
+import authRouter from './routes/auth.js';
 import db from './services/db.js';
 import { initSockets } from './sockets/index.js';
 import { cleanupWorkflowHistory, initWorkflowHistoryTable } from './models/WorkflowHistory.js';
@@ -18,6 +19,7 @@ const io = new Server(server, { cors: { origin: process.env.CLIENT_ORIGIN || '*'
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || '*' }));
 app.use(express.json());
 app.use((req, _res, next) => { req.io = io; next(); });
+app.use('/api', authRouter);
 app.use('/api', agentsRouter);
 app.use('/api', logsRouter);
 app.use('/api', workflowRouter);

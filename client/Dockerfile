@@ -1,5 +1,9 @@
 FROM node:22-alpine AS build
 WORKDIR /app
+ARG VITE_API_URL=http://localhost:8080
+ARG VITE_SOCKET_URL=http://localhost:8080
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_SOCKET_URL=${VITE_SOCKET_URL}
 COPY package*.json ./
 RUN npm ci
 COPY . .
